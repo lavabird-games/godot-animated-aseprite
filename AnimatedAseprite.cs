@@ -26,6 +26,12 @@ public class AnimatedAseprite : Node2D
 	public delegate void FrameChanged();
 
 	/// <summary>
+	/// Pure C# event for when a frame has been drawn. This is useful if you need precise frame timing (e.g. for updating
+	/// shader information), and using a signal would be too slow.
+	/// </summary>
+	public event Action? FrameDrawn;
+
+	/// <summary>
 	/// The texture with the frames needed for this node's animations.
 	/// </summary>
 	[Export]
@@ -318,6 +324,9 @@ public class AnimatedAseprite : Node2D
 
 			// Render the texture from the sheet
 			DrawTextureRectRegion(SpriteSheet, destRect, frameData.Region);
+
+			// Using signals was too slow for this (there was a 1 frame lag when updating)
+			FrameDrawn?.Invoke();
 		}
 	}
 
