@@ -313,17 +313,18 @@ public class AnimatedAseprite : Node2D
 			var frameData = animation.Frames[frameIndex];
 
 			// Calculate destination rect accomodating for flips and center
-			var flipX = FlipH ? -1 : 1;
-			var flipY = FlipV ? -1 : 1;
-			var destRect = new Rect2(frameData.Offset, 
-				new Vector2(frameData.Region.Size.x * flipX, frameData.Region.Size.y * flipY));
-			if(Centered)
+			var destOffset = new Vector2(
+				FlipH ? (animation.FrameSize.x - frameData.Region.Size.x) - frameData.Offset.x : frameData.Offset.x,
+				FlipV ? (animation.FrameSize.y - frameData.Region.Size.y) - frameData.Offset.y : frameData.Offset.y);
+			var destSize = new Vector2((FlipH ? -1 : 1), FlipV ? -1 : 1) * frameData.Region.Size;
+
+			if (Centered)
 			{
-				destRect.Position -= (animation.FrameSize / 2f);
+				destOffset -= (animation.FrameSize / 2f);
 			}
 
 			// Render the texture from the sheet
-			DrawTextureRectRegion(SpriteSheet, destRect, frameData.Region);
+			DrawTextureRectRegion(SpriteSheet, new Rect2(destOffset, destSize), frameData.Region);
 
 			// Using signals was too slow for this (there was a 1 frame lag when updating)
 			FrameDrawn?.Invoke();
