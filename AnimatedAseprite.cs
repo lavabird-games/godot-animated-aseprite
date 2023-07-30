@@ -239,6 +239,12 @@ public class AnimatedAseprite : Node2D
 	private bool flipV = false;
 
 	/// <summary>
+	/// Flag that hides us automatically when we have finished playing the current animation (and we're not looping).
+	/// </summary>
+	[Export]
+	public bool HideOnFinished { get; set; } = false;
+
+	/// <summary>
 	/// Amount of time elapsed (in seconds) since we last changed frame.
 	/// </summary>
 	private float elapsed;
@@ -390,6 +396,12 @@ public class AnimatedAseprite : Node2D
 		else
 		{
 			Playing = false;
+
+			if (HideOnFinished)
+			{
+				Visible = false;
+			}
+
 			PropertyListChangedNotify();
 		}
 
