@@ -1,5 +1,9 @@
-
 # Animated Aseprite for Godot
+
+> [!WARNING]
+> This branch is for an older version of the plugin designed for Godot 3, and is no longer being maintained.
+> [A newer version is available here](https://github.com/lavabird-games/godot-animated-aseprite).
+
 A **C# Godot plugin** to make working with exported **Aseprite animations** easier.
 
 Implements a new node - **AnimatedAseprite**. Functionally very similar to Godot's own AnimatedSprite, but supports animation definitions and sprite sheets exported from Aseprite.
