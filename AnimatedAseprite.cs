@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Linq;
 
 using Godot;
+using Godot.Collections;
 
 namespace Lavabird.Plugins.AnimatedAseprite;
 
@@ -11,19 +12,19 @@ namespace Lavabird.Plugins.AnimatedAseprite;
 /// for each displayed frame.
 /// </summary>
 [Tool]
-public class AnimatedAseprite : Node2D
+public partial class AnimatedAseprite : Node2D
 {
 	/// <summary>
 	/// Emitted when the current animation has finished playing.
 	/// </summary>
 	[Signal]
-	public delegate void AnimationFinished();
+	public delegate void AnimationFinishedEventHandler();
 
 	/// <summary>
 	/// Emitted when this animtion changes frame.
 	/// </summary>
 	[Signal]
-	public delegate void FrameChanged();
+	public delegate void FrameChangedEventHandler();
 
 	/// <summary>
 	/// Pure C# event for when a frame has been drawn. This is useful if you need precise frame timing (e.g. for updating
@@ -35,16 +36,16 @@ public class AnimatedAseprite : Node2D
 	/// The texture with the frames needed for this node's animations.
 	/// </summary>
 	[Export]
-	public Texture? SpriteSheet
+	public Texture2D? SpriteSheet
 	{
 		get => spriteSheet;
 		set
 		{
 			spriteSheet = value;
-			Update();
+			QueueRedraw();
 		}
 	}
-	private Texture? spriteSheet;
+	private Texture2D? spriteSheet;
 
 	/// <summary>
 	/// The resource containing the animation definition.
@@ -58,15 +59,15 @@ public class AnimatedAseprite : Node2D
 			animationData = value;
 			// If we had no animation or an invalid animation set from before then
 			// we can just pick the first valid one from the list to use
-			if (animationData != null && animationData.Animations.Count() > 0)
+			if (animationData != null && animationData.Animations.Any())
 			{
 				if(Animation == null || !animationData.HasAnimation(Animation))
 				{
 					Animation = animationData.AnimationNames.First();
 				}
-				Update();
+				QueueRedraw();
 			}
-			PropertyListChangedNotify();
+			NotifyPropertyListChanged();
 		}
 	}
 	private AsepriteAnimations? animationData;
@@ -93,7 +94,7 @@ public class AnimatedAseprite : Node2D
 				{
 					Frame = anim.Frames.Count - 1;
 				}
-				// Changing frame will call Update so we don't need to
+				// Changing frame will call QueueDraw so we don't need to
 			}
 			animation = value;
 		}
@@ -125,12 +126,12 @@ public class AnimatedAseprite : Node2D
 						// update when we are stopped.
 						if (!Playing)
 						{
-							PropertyListChangedNotify();
+							NotifyPropertyListChanged();
 						}
 					}
 
 					elapsed = 0;
-					Update();
+					QueueRedraw();
 				}
 				else
 				{
@@ -188,7 +189,7 @@ public class AnimatedAseprite : Node2D
 		set
 		{
 			centered = value;
-			Update();
+			QueueRedraw();
 		}
 	}
 	private bool centered = true;
@@ -203,7 +204,7 @@ public class AnimatedAseprite : Node2D
 		set
 		{
 			offset = value;
-			Update();
+			QueueRedraw();
 		}
 	}
 	private Vector2 offset;
@@ -218,7 +219,7 @@ public class AnimatedAseprite : Node2D
 		set
 		{
 			flipH = value;
-			Update();
+			QueueRedraw();
 		}
 	}
 	private bool flipH = false;
@@ -233,7 +234,7 @@ public class AnimatedAseprite : Node2D
 		set
 		{
 			flipV = value;
-			Update();
+			QueueRedraw();
 		}
 	}
 	private bool flipV = false;
@@ -247,7 +248,7 @@ public class AnimatedAseprite : Node2D
 	/// <summary>
 	/// Amount of time elapsed (in seconds) since we last changed frame.
 	/// </summary>
-	private float elapsed;
+	private double elapsed;
 
 	/// <summary>
 	/// Whether we are currently playing forwards or backwards. This is an internal state for the current play,
@@ -258,11 +259,11 @@ public class AnimatedAseprite : Node2D
 	/// <inheritdoc/>
 	public override void _Ready()
 	{
-		Update();
+		QueueRedraw();
 	}
 
 	/// <inheritdoc/>
-	public override void _Process(float delta)
+	public override void _Process(double delta)
 	{
 		elapsed += (delta * SpeedScale);
 
@@ -301,7 +302,7 @@ public class AnimatedAseprite : Node2D
 					}
 				}
 
-				Update();
+				QueueRedraw();
 			}
 		}
 	}
@@ -320,8 +321,8 @@ public class AnimatedAseprite : Node2D
 
 			// Calculate destination rect accomodating for flips and center
 			var destOffset = new Vector2(
-				FlipH ? (animation.FrameSize.x - frameData.Region.Size.x) - frameData.Offset.x : frameData.Offset.x,
-				FlipV ? (animation.FrameSize.y - frameData.Region.Size.y) - frameData.Offset.y : frameData.Offset.y);
+				FlipH ? (animation.FrameSize.X - frameData.Region.Size.X) - frameData.Offset.X : frameData.Offset.X,
+				FlipV ? (animation.FrameSize.Y - frameData.Region.Size.Y) - frameData.Offset.Y : frameData.Offset.Y);
 			var destSize = new Vector2((FlipH ? -1 : 1), FlipV ? -1 : 1) * frameData.Region.Size;
 
 			if (Centered)
@@ -348,7 +349,7 @@ public class AnimatedAseprite : Node2D
 			Animation = animation;
 
 			Playing = true;
-			Update();
+			QueueRedraw();
 		}
 		else
 		{
@@ -402,7 +403,7 @@ public class AnimatedAseprite : Node2D
 				Visible = false;
 			}
 
-			PropertyListChangedNotify();
+			NotifyPropertyListChanged();
 		}
 
 		EmitSignal(nameof(AnimationFinished));
@@ -425,18 +426,18 @@ public class AnimatedAseprite : Node2D
 	}
 
 	/// <inheritdoc/>
-	public override Godot.Collections.Array _GetPropertyList()
+	public override Array<Dictionary> _GetPropertyList()
 	{
-		var propertyList = new Godot.Collections.Array();
+		var propertyList = new Array<Dictionary>();
 
 		// Include Animation property as a dropdown (we're still a freeform string property in code)
 		// but this makes it nicer to work with in the editor.
 		// In G4 we could categorise this so it doesn't appear at the bottom of the list
 		// It should appear 3rd (after AnimationData instead)
-		var propertyDef = new Godot.Collections.Dictionary<string, object>();
+		var propertyDef = new Dictionary();
 		propertyDef["name"] = "Animation";
-		propertyDef["type"] = Variant.Type.String;
-		propertyDef["hint"] = PropertyHint.Enum;
+		propertyDef["type"] = (int)Variant.Type.String;
+		propertyDef["hint"] = (int)PropertyHint.Enum;
 		propertyDef["hint_string"] = AnimationData != null ? String.Join(",", AnimationData.AnimationNames) : "default";
 
 		propertyList.Add(propertyDef);
@@ -449,15 +450,15 @@ public class AnimatedAseprite : Node2D
 	/// properly configured the node at design time. This does not exclude more issues being found
 	/// at runtime by additional error checks.
 	/// </summary>
-	public override string _GetConfigurationWarning()
+	public override string[] _GetConfigurationWarnings()
 	{
 		var validate = ValidateDesignTimeConfiguration();
 		if (!validate.Valid)
 		{
-			return validate.Error!;
+			return [validate.Error!];
 		}
 
-		return String.Empty;    // Godot wants empty for no message, not null
+		return [];
 	}
 
 	/// <summary>

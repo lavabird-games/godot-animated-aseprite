@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,10 +7,10 @@ using Godot;
 namespace Lavabird.Plugins.AnimatedAseprite;
 
 /// <summary>
-/// Collection of Animation objects that define all the aniamtions from an Aseprite export.
+/// Collection of Animation objects that define all the animations from an Aseprite export.
 /// </summary>
 [Tool]
-public class AsepriteAnimations : Resource
+public partial class AsepriteAnimations : Resource
 {
 	/// <summary>
 	/// Gets the list of all animations in this AnimationData object.
@@ -18,7 +18,7 @@ public class AsepriteAnimations : Resource
 	public IEnumerable<AsepriteAnimation> Animations { get => AnimationMap.Values; }
 
 	/// <summary>
-	/// Gets the the names of all the animations in this AnimationData object.
+	/// Gets the names of all the animations in this AnimationData object.
 	/// </summary>
 	public IEnumerable<string> AnimationNames { get => AnimationMap.Keys; }
 
@@ -26,12 +26,7 @@ public class AsepriteAnimations : Resource
 	/// Map of all animations we have stored keyed by animation name.
 	/// </summary>
 	[Export]
-	private Godot.Collections.Dictionary<string, AsepriteAnimation> AnimationMap;
-
-	public AsepriteAnimations()
-	{
-		AnimationMap = new Godot.Collections.Dictionary<string, AsepriteAnimation>();
-	}
+	private Godot.Collections.Dictionary<string, AsepriteAnimation> AnimationMap = new();
 
 	/// <summary>
 	/// Adds a new animation to the FrameData object.

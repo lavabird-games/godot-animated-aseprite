@@ -39,12 +39,6 @@ C# Godot plugins require distribution through source code which makes them a goo
  1. Download the latest release and copy it to your Godot project at `addons/Lavabird.AnimatedAseprite/`. You might need to create the `addons` folder if this is the first plugin in the project.
  2. Build your project once.
  3. From the Godot menu bar, select `Project` -> `Project Settings` to open the settings window. Select the `Plugins` tab and tick the `Enabled` checkbox next to the AnimatedAseprite plugin.
- 
-##### Requires C# 8.0 or higher
-
-This project is using nullable reference types, and will require a C# language version of 8.0 or higher. For 3.x projects, you may need to update your `.csproj` file and include the following `PropertyGroup` entry:
-
-```<LangVersion>8</LangVersion>```
 
 ### Limitations
 
@@ -53,6 +47,9 @@ This project is using nullable reference types, and will require a C# language v
 
 ### Dependencies
 
- - Godot 3.5 (Mono) LTS
+ - Godot 4.x
  - Newtonsoft.Json >= 12.0.0
 
+### Previous Versions
+
+For Godot 3.x support, please see the [Godot-3 branch](https://github.com/lavabird-games/godot-animated-aseprite/tree/godot-3).

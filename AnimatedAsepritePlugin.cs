@@ -1,4 +1,4 @@
-﻿#if TOOLS // For release builds, we only need the node definition, not the whole plugin
+#if TOOLS // For release builds, we only need the node definition, not the whole plugin
 
 using System;
 using System.Text.RegularExpressions;
@@ -13,7 +13,7 @@ using Lavabird.Plugins.AnimatedAseprite.Importer;
 /// Plugin that makes working with exported Aseprite animations easier.
 /// </summary>
 [Tool]
-public class AnimatedAsepritePlugin : EditorPlugin, ISerializationListener
+public partial class AnimatedAsepritePlugin : EditorPlugin, ISerializationListener
 {
 	#pragma warning disable CS8618 // We are using Godot's tree lifecycle not the ctor. Nothing instances us directly so is ok.                                                                                              
 
@@ -60,7 +60,7 @@ public class AnimatedAsepritePlugin : EditorPlugin, ISerializationListener
 	private void RegisterCustomType(string typeName, string godotBase, string pluginPath, string scriptPath, string iconPath)
 	{
 		var script = GD.Load<Script>(pluginPath + scriptPath);
-		var icon = GD.Load<Texture>(pluginPath + iconPath);
+		var icon = GD.Load<Texture2D>(pluginPath + iconPath);
 
 		if (script != null && icon != null)
 		{
@@ -77,18 +77,14 @@ public class AnimatedAsepritePlugin : EditorPlugin, ISerializationListener
 	/// </summary>
 	private string GetPluginFolderRoot()
 	{
-		// There is (3.6) no built in method to get the plugin path. Instead we grab this script as a resource
-		//  and then grab the resource path.
-		var script = GetScript() as Resource;
-		if (script != null)
-		{
-			var regex = new Regex("^(res:\\/\\/addons\\/[^\\/]+)\\/.*\\.cs");
-			var match = regex.Match(script.ResourcePath);
+		// There is no built-in method to get our plugin root, but we can grab this script as a resource and use its path
+		var script = (CSharpScript)GetScript();
+		var regex = new Regex("^(res:\\/\\/addons\\/[^\\/]+)\\/.*\\.cs");
+		var match = regex.Match(script.ResourcePath);
 
-			if (match.Success)
-			{
-				return match.Groups[1].Value;
-			}
+		if (match.Success)
+		{
+			return match.Groups[1].Value;
 		}
 
 		AnimatedAsepritePlugin.Error("Unable to determine a base path for the plugin.");
@@ -114,7 +110,7 @@ public class AnimatedAsepritePlugin : EditorPlugin, ISerializationListener
 	/// <inheritdoc/>
 	public void OnAfterDeserialize()
 	{
-		// We lose the static PluginRoot when we are re-serliazed, so we have to set it again
+		// We lose the static PluginRoot when we are re-serialized, so we have to set it again
 		AnimatedAsepritePlugin.PluginRoot = GetPluginFolderRoot();
 	}
 

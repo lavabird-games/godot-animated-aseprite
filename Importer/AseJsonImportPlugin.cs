@@ -1,4 +1,4 @@
-﻿#if TOOLS // For release builds, we only need the node definition, not the whole plugin
+#if TOOLS // For release builds, we only need the node definition, not the whole plugin
 
 using System;
 using System.Collections.Generic;
@@ -19,65 +19,65 @@ using Newtonsoft.Json;
 /// to be used by Godot to render animations.
 /// </summary>
 [Tool]
-internal class AseJsonImportPlugin : EditorImportPlugin
+internal partial class AseJsonImportPlugin : EditorImportPlugin
 {
 	/// <inheritdoc/>
-	public override string GetImporterName()
+	public override string _GetImporterName()
 	{
 		return "Lavabird.AnimatedAseprite.AseJsonImporter";
 	}
 
 	/// <inheritdoc/>
-	public override string GetVisibleName()
+	public override string _GetVisibleName()
 	{
 		return "Aseprite Animation Json";
 	}
 
 	/// <inheritdoc/>
-	public override Godot.Collections.Array GetRecognizedExtensions()
+	public override string[] _GetRecognizedExtensions()
 	{
 		// We rely on a custom extension so that we don't process every JSON file in the project.
 		// It's a common format and this avoids collisions.
-		return new Godot.Collections.Array() { "ase-json" };
+		return [ "ase-json" ];
 	}
 
 	/// <inheritdoc/>
-	public override string GetSaveExtension()
+	public override string _GetSaveExtension()
 	{
 		return "res";
 	}
 
 	/// <inheritdoc/>
-	public override string GetResourceType()
+	public override string _GetResourceType()
 	{
 		return "Resource";
 	}
 
 	/// <inheritdoc/>
-	public override int GetPresetCount()
+	public override int _GetPresetCount()
 	{
 		// We have no presets
 		return 0;
 	}
 
 	/// <inheritdoc/>
-	public override Godot.Collections.Array GetImportOptions(int preset)
+	public override Array<Dictionary> _GetImportOptions(string path, int presetIndex)
 	{
 		// Must return even if we don't have options
-		return new Godot.Collections.Array();
+		return [];
 	}
 
 	/// <inheritdoc/>
-	public override int Import(string sourceFile, string savePath, Dictionary options, 
-		Godot.Collections.Array platformVariants, Godot.Collections.Array genFiles)
+	public override Error _Import(string sourceFile, string savePath, Dictionary options, 
+		Array<string> array, Array<string> genFiles1)
 	{
 		// Grab the contents of the JSON file
-		var file = new File();
-		var err = file.Open(sourceFile, File.ModeFlags.Read);
-		if (err != Error.Ok)
+		using var file = FileAccess.Open(sourceFile, FileAccess.ModeFlags.Read);
+		if (file == null)
 		{
-			AnimatedAsepritePlugin.Error($"Unable to open animation definition file '{sourceFile}'. Got error {err}");
-			return (int)Error.FileCantRead;
+			var openError = FileAccess.GetOpenError();
+			AnimatedAsepritePlugin.Error($"Unable to open animation definition file '{sourceFile}'. Got error {openError}"); 
+			return Error.FileCantRead;
 		}
 
 		var json = file.GetAsText();
@@ -96,28 +96,28 @@ internal class AseJsonImportPlugin : EditorImportPlugin
 		catch(JsonException ex)
 		{
 			AnimatedAsepritePlugin.Error($"Unable parse animation JSON file. {ex.Message}");
-			return (int)Error.FileCorrupt;
+			return Error.FileCorrupt;
 		}
 
 		var animations = ParseAseJsonData(jsonData);
 
 		// Did we have anything to export?
-		if (animations.Animations.Count() == 0)
+		if (!animations.Animations.Any())
 		{
 			AnimatedAsepritePlugin.Error($"No valid animations found in file '{sourceFile}'.");
-			return (int)Error.InvalidData;
+			return Error.InvalidData;
 		}
 
 		// Everything is OK, try and save
-		savePath = $"{savePath}.{GetSaveExtension()}";
-		err = ResourceSaver.Save(savePath, animations);
+		savePath = $"{savePath}.{_GetSaveExtension()}";
+		var err = ResourceSaver.Save(animations, savePath);
 		if (err != Error.Ok)
 		{
 			AnimatedAsepritePlugin.Error($"Unable to save animation resource file '{savePath}'. Got error {err}");
-			return (int)err;
+			return err;
 		}
 
-		return (int)Error.Ok;
+		return Error.Ok;
 	}
 
 	/// <summary>
@@ -128,10 +128,7 @@ internal class AseJsonImportPlugin : EditorImportPlugin
 		var animations = InstancePluginResource<AsepriteAnimations>();
 
 		// We can have no frame tags. This is a special case where the whole file is a single animation
-		if (aseJsonData.Meta.FrameTags == null)
-		{
-			aseJsonData.Meta.FrameTags = new List<AseJsonData.FrameTagInfo>();
-		}
+		aseJsonData.Meta.FrameTags ??= new List<AseJsonData.FrameTagInfo>();
 		if (aseJsonData.Meta.FrameTags.Count == 0)
 		{
 			// Add a fake frameTag for a "default" animtion with all frames included, so we can re-use our parser code
@@ -145,7 +142,7 @@ internal class AseJsonImportPlugin : EditorImportPlugin
 		}
 
 		// Parse each tagged animation into our AsepriteAnimations resource
-		if (aseJsonData.Frames != null && aseJsonData.Frames.Count > 0)
+		if (aseJsonData.Frames is { Count: > 0 })
 		{
 			foreach (var tag in aseJsonData.Meta.FrameTags)
 			{
@@ -173,10 +170,10 @@ internal class AseJsonImportPlugin : EditorImportPlugin
 				{
 					var frame = InstancePluginResource<AsepriteFrame>();
 
-					frame.Region = new Rect2(aseJsonData.Frames[i].Frame.x, aseJsonData.Frames[i].Frame.y,
-						aseJsonData.Frames[i].Frame.w, aseJsonData.Frames[i].Frame.h);
+					frame.Region = new Rect2(aseJsonData.Frames[i].Frame.X, aseJsonData.Frames[i].Frame.Y,
+						aseJsonData.Frames[i].Frame.W, aseJsonData.Frames[i].Frame.H);
 					frame.Offset = new Vector2(
-						aseJsonData.Frames[i].SpriteSourceSize.x, aseJsonData.Frames[i].SpriteSourceSize.y);
+						aseJsonData.Frames[i].SpriteSourceSize.X, aseJsonData.Frames[i].SpriteSourceSize.Y);
 					frame.Duration = aseJsonData.Frames[i].Duration / 1000f; // Aseprite uses ms, we use seconds
 
 					animation.Frames.Add(frame);
@@ -184,7 +181,7 @@ internal class AseJsonImportPlugin : EditorImportPlugin
 
 				// We assume the same frame (source) size for every frame in the animation
 				animation.FrameSize = new Vector2(
-					aseJsonData.Frames[tag.From].SourceSize.w, aseJsonData.Frames[tag.From].SourceSize.h);
+					aseJsonData.Frames[tag.From].SourceSize.W, aseJsonData.Frames[tag.From].SourceSize.H);
 
 				// We need to strip any commas from the name. They will break Godot's property listing in the inspector
 				var animationName = tag.Name.Replace(",", "");

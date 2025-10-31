@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 
 using Godot;
@@ -9,7 +9,7 @@ namespace Lavabird.Plugins.AnimatedAseprite;
 /// Resource that defines an Aseprite animation.
 /// </summary>
 [Tool]
-public class AsepriteAnimation : Resource
+public partial class AsepriteAnimation : Resource
 {
 	/// <summary>
 	/// The different animation directions we support.
@@ -20,7 +20,7 @@ public class AsepriteAnimation : Resource
 	/// List of frames this animation has.
 	/// </summary>
 	[Export]
-	public Godot.Collections.Array<AsepriteFrame> Frames { get; private set; }
+	public Godot.Collections.Array<AsepriteFrame> Frames { get; private set; } = new();
 
 	/// <summary>
 	/// The size (in pixels) of the frames for this animation.
@@ -38,9 +38,4 @@ public class AsepriteAnimation : Resource
 	/// Animation duration in seconds.
 	/// </summary>
 	public float Duration { get => Frames.Sum(f => f.Duration); }
-
-	public AsepriteAnimation()
-	{
-		Frames = new Godot.Collections.Array<AsepriteFrame>();
-	}
 }

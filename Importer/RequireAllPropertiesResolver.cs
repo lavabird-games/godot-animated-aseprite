@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -8,7 +8,7 @@ namespace Lavabird.Plugins.AnimatedAseprite.Importer;
 /// <summary>
 /// Resolver that forces all properties to be required unless opt-ed out. Makes the data class less decorated.
 /// </summary>
-public class RequireAllPropertiesResolver : DefaultContractResolver
+public partial class RequireAllPropertiesResolver : DefaultContractResolver
 {
 	protected override JsonObjectContract CreateObjectContract(Type objectType)
 	{

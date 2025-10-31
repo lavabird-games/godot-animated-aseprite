@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using Godot;
 
@@ -8,7 +8,8 @@ namespace Lavabird.Plugins.AnimatedAseprite;
 /// Resource that defines a frame within an AsepriteAnimation.
 /// </summary>
 [Tool]
-public class AsepriteFrame : Resource
+[GlobalClass]
+public partial class AsepriteFrame : Resource
 {
 	/// <summary>
 	/// The region within the sprite sheet that contains the image we should render.
