@@ -3,14 +3,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 using Godot;
 using Godot.Collections;
 
 using Lavabird.Plugins.AnimatedAseprite;
 using Lavabird.Plugins.AnimatedAseprite.Importer;
-
-using Newtonsoft.Json;
 
 // Plugin needs to be outside namespace
 
@@ -87,11 +87,13 @@ internal partial class AseJsonImportPlugin : EditorImportPlugin
 		AseJsonData jsonData;
 		try
 		{
-			var settings = new JsonSerializerSettings
+			var settings = new JsonSerializerOptions 
 			{ 
-				ContractResolver = new RequireAllPropertiesResolver() 
+				AllowTrailingCommas = true,
+				NumberHandling = JsonNumberHandling.AllowReadingFromString, // Aseprite puts scale property in quotes 
+				PropertyNameCaseInsensitive = true,
 			};
-			jsonData = JsonConvert.DeserializeObject<AseJsonData>(json, settings)!;
+			jsonData = JsonSerializer.Deserialize<AseJsonData>(json, settings)!;
 		}
 		catch(JsonException ex)
 		{

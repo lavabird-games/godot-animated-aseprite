@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Lavabird.Plugins.AnimatedAseprite.Importer;
 
@@ -23,7 +22,6 @@ internal class AseJsonData
 	public partial class FrameInfo
 	{
 		// This can be null, as the name might be in the key if hash instead of array
-		[JsonProperty(Required = Required.Default)]
 		public string? Filename { get; set; }
 
 		public required Rect Frame { get; set; }
@@ -46,17 +44,14 @@ internal class AseJsonData
 		public required string Version { get; set; }
 
 		public required string Image { get; set; }
-
-		[JsonProperty(Required = Required.Default)]
+		
 		public string? Format { get; set; }
 
 		public required Size Size { get; set; }
-
-		[JsonProperty(Required = Required.Default)]
-		public required float Scale { get; set; } = 1;
+		
+		public float Scale { get; set; } = 1;
 
 		// We can have no named animations defined (then we use the whole thing as one animation)
-		[JsonProperty(Required = Required.Default)]
 		public List<FrameTagInfo>? FrameTags { get; set; }
 	}
 

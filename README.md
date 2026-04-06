@@ -48,7 +48,6 @@ C# Godot plugins require distribution through source code which makes them a goo
 ### Dependencies
 
  - Godot 4.x
- - Newtonsoft.Json >= 12.0.0
 
 ### Previous Versions
 
