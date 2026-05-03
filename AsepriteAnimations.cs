@@ -20,18 +20,18 @@ public partial class AsepriteAnimations : Resource
 	/// <summary>
 	/// Gets the names of all the animations in this AnimationData object.
 	/// </summary>
-	public IEnumerable<string> AnimationNames { get => AnimationMap.Keys; }
+	public IEnumerable<StringName> AnimationNames { get => AnimationMap.Keys; }
 
 	/// <summary>
 	/// Map of all animations we have stored keyed by animation name.
 	/// </summary>
 	[Export]
-	private Godot.Collections.Dictionary<string, AsepriteAnimation> AnimationMap = new();
+	private Godot.Collections.Dictionary<StringName, AsepriteAnimation> AnimationMap = new();
 
 	/// <summary>
 	/// Adds a new animation to the FrameData object.
 	/// </summary>
-	public void AddAnimation(string animationName, AsepriteAnimation animation)
+	public void AddAnimation(StringName animationName, AsepriteAnimation animation)
 	{
 		AnimationMap.Add(animationName, animation);
 	}
@@ -39,7 +39,7 @@ public partial class AsepriteAnimations : Resource
 	/// <summary>
 	/// Checks if an animation with the given name exists in this collection.
 	/// </summary>
-	public bool HasAnimation(string animationName)
+	public bool HasAnimation(StringName animationName)
 	{
 		return AnimationMap.ContainsKey(animationName);
 	}
@@ -47,7 +47,7 @@ public partial class AsepriteAnimations : Resource
 	/// <summary>
 	/// Returns the Animation with the given name.
 	/// </summary>
-	public AsepriteAnimation this[string animationName]
+	public AsepriteAnimation this[StringName animationName]
 	{
 		get => AnimationMap[animationName];
 	}

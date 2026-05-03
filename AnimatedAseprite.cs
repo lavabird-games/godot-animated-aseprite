@@ -76,7 +76,7 @@ public partial class AnimatedAseprite : Node2D
 	/// The name of the animation currently being played.
 	/// </summary>
 	// Property is not an [Export] as we define it manually in _GetPropertyList.
-	public string? Animation
+	public StringName? Animation
 	{
 		get => animation;
 		set
@@ -85,8 +85,7 @@ public partial class AnimatedAseprite : Node2D
 			{
 				// Reset to end frame for the chosen animation
 				var anim = AnimationData[value];
-				if(anim.Direction == AsepriteAnimation.AnimationDirection.Forward || 
-					anim.Direction == AsepriteAnimation.AnimationDirection.PingPong)
+				if(anim.Direction is AsepriteAnimation.AnimationDirection.Forward or AsepriteAnimation.AnimationDirection.PingPong)
 				{
 					Frame = 0;
 				}
@@ -99,7 +98,7 @@ public partial class AnimatedAseprite : Node2D
 			animation = value;
 		}
 	}
-	private string? animation;
+	private StringName? animation;
 
 	/// <summary>
 	/// The displayed animation frame's index.
@@ -269,20 +268,20 @@ public partial class AnimatedAseprite : Node2D
 
 		if (AnimationData != null && Animation != null && AnimationData.HasAnimation(Animation))
 		{
-			var animation = AnimationData[Animation];
+			var playingAnimation = AnimationData[Animation];
 
 			// If we lagged, we might need to skip multiple frames to catch up
-			while(Playing && animation.Frames[Frame].Duration < elapsed)
+			while (Playing && playingAnimation.Frames[Frame].Duration < elapsed)
 			{
-				elapsed -= animation.Frames[Frame].Duration;
+				elapsed -= playingAnimation.Frames[Frame].Duration;
 
 				if(forward)
 				{
 					// Go to the next frame if we have one, else we have finished the animation
-					if(Frame < animation.Frames.Count - 1)
+					if(Frame < playingAnimation.Frames.Count - 1)
 					{
 						Frame++;
-						EmitSignal(nameof(FrameChanged));
+						EmitSignalFrameChanged();
 					}
 					else
 					{
@@ -294,7 +293,7 @@ public partial class AnimatedAseprite : Node2D
 					if (Frame > 0)
 					{
 						Frame--;
-						EmitSignal(nameof(FrameChanged));
+						EmitSignalFrameChanged();
 					}
 					else
 					{
@@ -312,28 +311,28 @@ public partial class AnimatedAseprite : Node2D
 	{
 		if (AnimationData != null && Animation != null && AnimationData.HasAnimation(Animation))
 		{
-			var animation = AnimationData[Animation];
+			var playingAnimation = AnimationData[Animation];
 
 			// If we are out of range (we check this earlier, but the animation itself could be modified) then
 			// we just render the first frame of the animation so we're not invisible.
-			var frameIndex = frame < animation.Frames.Count ? frame : 0;
-			var frameData = animation.Frames[frameIndex];
+			var frameIndex = frame < playingAnimation.Frames.Count ? frame : 0;
+			var frameData = playingAnimation.Frames[frameIndex];
 
-			// Calculate destination rect accomodating for flips and center
+			// Calculate destination rect accommodating for flips and center
 			var destOffset = new Vector2(
-				FlipH ? (animation.FrameSize.X - frameData.Region.Size.X) - frameData.Offset.X : frameData.Offset.X,
-				FlipV ? (animation.FrameSize.Y - frameData.Region.Size.Y) - frameData.Offset.Y : frameData.Offset.Y);
+				FlipH ? (playingAnimation.FrameSize.X - frameData.Region.Size.X) - frameData.Offset.X : frameData.Offset.X,
+				FlipV ? (playingAnimation.FrameSize.Y - frameData.Region.Size.Y) - frameData.Offset.Y : frameData.Offset.Y);
 			var destSize = new Vector2((FlipH ? -1 : 1), FlipV ? -1 : 1) * frameData.Region.Size;
 
 			if (Centered)
 			{
-				destOffset -= (animation.FrameSize / 2f);
+				destOffset -= (playingAnimation.FrameSize / 2f);
 			}
 
 			// Render the texture from the sheet
 			DrawTextureRectRegion(SpriteSheet, new Rect2(destOffset, destSize), frameData.Region);
 
-			// Using signals was too slow for this (there was a 1 frame lag when updating)
+			// Using signals was too slow for this (there was a 1-frame lag when updating)
 			FrameDrawn?.Invoke();
 		}
 	}
@@ -342,18 +341,18 @@ public partial class AnimatedAseprite : Node2D
 	/// Plays the given animation. If no animation is given will play the current animation. 
 	/// Frame will be reset to 0 if changing animation, otherwise will remain unchanged.
 	/// </summary>
-	public void Play(string? animation = null)
+	public void Play(StringName? newAnimation = null)
 	{
-		if(animation != null && AnimationData != null && AnimationData.HasAnimation(animation))
+		if(newAnimation != null && AnimationData != null && AnimationData.HasAnimation(newAnimation))
 		{
-			Animation = animation;
+			Animation = newAnimation;
 
 			Playing = true;
 			QueueRedraw();
 		}
 		else
 		{
-			GD.PushError($"Could not find animation '{animation}' in AnimationData.");
+			GD.PushError($"Could not find animation '{newAnimation?.ToString() ?? "null"}' in AnimationData.");
 		}
 	}
 
@@ -402,11 +401,12 @@ public partial class AnimatedAseprite : Node2D
 			{
 				Visible = false;
 			}
-
+#if TOOLS
 			NotifyPropertyListChanged();
+#endif
 		}
 
-		EmitSignal(nameof(AnimationFinished));
+		EmitSignalAnimationFinished();
 	}
 
 	/// <summary>
@@ -418,7 +418,7 @@ public partial class AnimatedAseprite : Node2D
 		{
 			if (AnimationData != null && Animation != null && AnimationData.HasAnimation(Animation))
 			{
-				return AnimationData[Animation].Frames.Count();
+				return AnimationData[Animation].Frames.Count;
 			}
 
 			return 0;
@@ -436,9 +436,9 @@ public partial class AnimatedAseprite : Node2D
 		// It should appear 3rd (after AnimationData instead)
 		var propertyDef = new Dictionary();
 		propertyDef["name"] = "Animation";
-		propertyDef["type"] = (int)Variant.Type.String;
+		propertyDef["type"] = (int)Variant.Type.StringName;
 		propertyDef["hint"] = (int)PropertyHint.Enum;
-		propertyDef["hint_string"] = AnimationData != null ? String.Join(",", AnimationData.AnimationNames) : "default";
+		propertyDef["hint_string"] = AnimationData != null ? string.Join(",", AnimationData.AnimationNames) : "default";
 
 		propertyList.Add(propertyDef);
 
@@ -476,7 +476,7 @@ public partial class AnimatedAseprite : Node2D
 			return (false, "AnimationData property must be set with an Aseprite animation definition.");
 		}
 
-		if (String.IsNullOrEmpty(Animation) || !AnimationData.HasAnimation(Animation!))
+		if (string.IsNullOrEmpty(Animation) || !AnimationData.HasAnimation(Animation!))
 		{
 			return (false, "Animation property must be set to a named animation from AnimationData.");
 		}
