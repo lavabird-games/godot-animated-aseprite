@@ -56,7 +56,9 @@ public partial class AnimatedAseprite : Node2D
 		get => animationData;
 		set
 		{
+			animationRevision++;
 			animationData = value;
+			
 			// If we had no animation or an invalid animation set from before then
 			// we can just pick the first valid one from the list to use
 			if (animationData != null && animationData.Animations.Any())
@@ -81,24 +83,36 @@ public partial class AnimatedAseprite : Node2D
 		get => animation;
 		set
 		{
-			if(animation != value && value != null && AnimationData != null && AnimationData.HasAnimation(value))
+			if (animation != value)
 			{
-				// Reset to end frame for the chosen animation
-				var anim = AnimationData[value];
-				if(anim.Direction is AsepriteAnimation.AnimationDirection.Forward or AsepriteAnimation.AnimationDirection.PingPong)
+				animationRevision++;
+
+				if (value != null && AnimationData != null && AnimationData.HasAnimation(value))
 				{
-					Frame = 0;
+					// Reset to end frame for the chosen animation
+					var anim = AnimationData[value];
+					if (anim.Direction is AsepriteAnimation.AnimationDirection.Forward
+					    or AsepriteAnimation.AnimationDirection.PingPong)
+					{
+						Frame = 0;
+					}
+					else
+					{
+						Frame = anim.Frames.Count - 1;
+					}
+					// Changing frame will call QueueDraw so we don't need to
 				}
-				else
-				{
-					Frame = anim.Frames.Count - 1;
-				}
-				// Changing frame will call QueueDraw so we don't need to
 			}
 			animation = value;
 		}
 	}
 	private StringName? animation;
+
+	/// <summary>
+	/// Incremented whenever the animation or its data changes. Signals emitted while processing can synchronously
+	/// change either property, invalidating the animation cached by <see cref="_Process"/>.
+	/// </summary>
+	private uint animationRevision;
 
 	/// <summary>
 	/// The displayed animation frame's index.
@@ -274,6 +288,8 @@ public partial class AnimatedAseprite : Node2D
 			while (Playing && playingAnimation.Frames[Frame].Duration < elapsed)
 			{
 				elapsed -= playingAnimation.Frames[Frame].Duration;
+				
+				var revisionBeforeSignal = animationRevision;
 
 				if(forward)
 				{
@@ -300,6 +316,10 @@ public partial class AnimatedAseprite : Node2D
 						OnAnimationFinished();
 					}
 				}
+
+				// Signals are synchronous and their handlers may start another animation. If that happened, Frame now
+				// belongs to the new animation and must not be used to index the animation cached above.
+				if (revisionBeforeSignal != animationRevision) return;
 
 				QueueRedraw();
 			}
